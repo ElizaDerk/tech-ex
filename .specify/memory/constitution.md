@@ -1,50 +1,101 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: (template) → 1.0.0
+- Modified principles: placeholders replaced with
+  I. Clear Separation of Concerns, II. Type Safety & Single-Source Validation,
+  III. Security by Default, IV. Accessibility & Performance, V. Simplicity
+- Added sections: Technology Stack, Quality Gates & Workflow, Governance
+- Removed sections: none
+- Templates: none modified (templates read the constitution at runtime)
+- Deferred TODOs: none
+-->
+
+# Bridges Landing Page Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Clear Separation of Concerns
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+- Pages and layouts MUST live in `src/app`, reusable UI in `src/components`, static content in
+  `src/data`, shared logic in `src/lib`, and Zod schemas in `src/schemas`.
+- Components MUST only render UI. Route handlers MUST only handle requests and responses and
+  delegate other logic to `src/lib`.
+- Third-party services (including the CRM) MUST be called only from the server.
+- Server components are the default; a client component is allowed only when interactivity
+  requires it.
+- Components and functions MUST have a single responsibility. Existing components MUST be reused
+  before new ones are created, and code MUST NOT be duplicated.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+Rationale: predictable locations and narrow responsibilities keep the codebase easy to navigate
+and explain.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Type Safety & Single-Source Validation
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+- TypeScript MUST run in strict mode. The type `any` MUST NOT be used.
+- Each Zod schema MUST be defined once; its TypeScript type MUST be derived from it
+  (`z.infer`), and the same schema MUST be used on both client and server.
+- All user input MUST be validated on the server, regardless of client-side validation.
+- Users MUST see friendly error messages. Internal errors and third-party responses MUST NOT be
+  exposed. User input MUST be preserved when a request fails.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Rationale: one source of truth for data shape prevents client/server drift; server validation is
+the only trustworthy boundary.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Security by Default
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- Secrets MUST live only in server-side environment variables and MUST NOT reach the client
+  bundle.
+- `.env` files MUST NOT be committed. `.env.example` MUST list every required variable and stay
+  up to date.
+- Every public form MUST include a honeypot field for spam protection.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Rationale: a public demo is still a public site; leaked keys or spam reach real third-party
+accounts.
+
+### IV. Accessibility & Performance
+
+- The site MUST target WCAG 2.1 AA: semantic HTML, a label for every input, full keyboard
+  navigation, visible focus states, and aria attributes that announce errors.
+- Images MUST use `next/image`. Page metadata MUST use the Next.js Metadata API.
+
+Rationale: accessibility and performance are baseline quality, not optional polish.
+
+### V. Simplicity
+
+- The author MUST be able to explain every line of code. The simplest solution that meets the
+  spec MUST be preferred.
+- Features, pages, fields, or libraries not present in a spec MUST NOT be added.
+- A new dependency MUST be justified by a clear need that the existing stack cannot meet.
+
+Rationale: the project is presented at a technical interview; unexplained or speculative code is
+a liability.
+
+## Technology Stack
+
+- Framework: Next.js (App Router) with TypeScript in strict mode.
+- Styling: Tailwind CSS.
+- Forms and validation: React Hook Form with Zod.
+- CRM: HubSpot, reached only through a server-side route handler.
+- Package manager: npm. Hosting: Vercel.
+- Tooling: ESLint, Prettier, Vitest.
+
+Changes to this stack require a constitution amendment.
+
+## Quality Gates & Workflow
+
+- `package.json` MUST provide the scripts `lint`, `lint:fix`, `format`, and `format:check`.
+- Prettier MUST use the root `.prettierrc` as is.
+- A task is done only when `npm run lint` and `npm run format:check` pass.
+- Every Zod schema MUST have Vitest unit tests.
+- Committed code MUST NOT contain `console.log` debugging statements.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes other practices. Every spec, plan, and task list MUST be checked
+  against it, and any deviation MUST be justified in the plan's complexity tracking.
+- Amendments are made by editing this file with a stated rationale and a version bump:
+  MAJOR for removed or redefined principles, MINOR for new principles or sections, PATCH for
+  wording clarifications.
+- Compliance is reviewed before a feature is considered complete.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27
