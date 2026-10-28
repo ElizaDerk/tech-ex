@@ -18,7 +18,7 @@ Sync Impact Report
 
 - Pages and layouts MUST live in `src/app`, reusable UI in `src/components`, static content in
   `src/data`, shared logic in `src/lib`, and Zod schemas in `src/schemas`.
-- Components MUST only render UI. Route handlers MUST only handle requests and responses and
+- Components MUST render UI and handle user interaction only; business and integration logic MUST live in `src/lib`. Route handlers MUST only handle requests and responses and
   delegate other logic to `src/lib`.
 - Third-party services (including the CRM) MUST be called only from the server.
 - Server components are the default; a client component is allowed only when interactivity
@@ -79,8 +79,6 @@ a liability.
 - Package manager: npm. Hosting: Vercel.
 - Tooling: ESLint, Prettier, Vitest.
 
-Changes to this stack require a constitution amendment.
-
 ## Quality Gates & Workflow
 
 - `package.json` MUST provide the scripts `lint`, `lint:fix`, `format`, and `format:check`.
@@ -98,4 +96,4 @@ Changes to this stack require a constitution amendment.
   wording clarifications.
 - Compliance is reviewed before a feature is considered complete.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27
+**Version**: 1.0.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-28
