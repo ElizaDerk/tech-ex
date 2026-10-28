@@ -5,6 +5,15 @@ validation schema, or state transition.
 
 ## Entities
 
+### SiteMetadata (`src/data/metadata.ts`, one instance)
+
+| Field | Type | Notes |
+|---|---|---|
+| `title` | `string` | Fictional-company page title. |
+| `description` | `string` | Short page description. |
+
+`layout.tsx` builds the Next.js `metadata` export from these values; no literal title or description is written there.
+
 ### HeroContent (`src/data/hero.ts`, one instance)
 
 | Field | Type | Notes |
@@ -12,7 +21,7 @@ validation schema, or state transition.
 | `headline` | `string` | Rendered in the only `h1`. |
 | `subtitle` | `string` | Short supporting text. |
 | `ctaLabel` | `string` | "Request a quote". |
-| `ctaTargetId` | `string` | Id of the target section, `"contact"`; the link `href` is `#` + this value. |
+| `ctaTargetId` | `string` | Id of the target section; set from the exported `contactId` constant (no second literal); the link `href` is `#` + this value. |
 
 ### Service (`src/data/services.ts`, `Service[]`, 4 items)
 
@@ -45,7 +54,7 @@ validation schema, or state transition.
 
 | Field | Type | Notes |
 |---|---|---|
-| `id` | `string` | `"contact"`; used as the section id. |
+| `id` | `string` | Set from `contactId` (`'contact'`), the single source of the id, exported from `src/data/contact.ts`; used as the section id. |
 | `heading` | `string` | `h2`. |
 | `intro` | `string` (optional) | Optional intro text. |
 
@@ -59,11 +68,12 @@ validation schema, or state transition.
 ### Section headings
 
 Services, Projects, and WorkStages each also need an `h2` heading. Each data file exports a `heading` string next to
-its list (for example `servicesHeading`), so no heading text is written in a component.
+its list (for example `servicesHeading`), so no heading text is written in a component. The shared `Section` component
+renders the `h2` from the `heading` it receives.
 
 ## Relationships
 
-`HeroContent.ctaTargetId` references `ContactContent.id`. There are no other relationships.
+`HeroContent.ctaTargetId` references `ContactContent.id`. Both come from the single `contactId` constant exported by `src/data/contact.ts` (`hero.ts` imports it), so they cannot drift apart. There are no other relationships.
 
 ## Validation
 

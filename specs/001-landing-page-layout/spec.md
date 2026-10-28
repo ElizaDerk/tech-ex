@@ -64,13 +64,14 @@ A visitor opens the website and sees a clear one-page landing for a bridge const
 - **Work stage**: A step of the delivery process (name, one-line description, position in sequence); four in total.
 - **Contact section content**: The section heading (and optional intro text) shown above the future form.
 - **Footer content**: Fictional company name and fictional-company notice.
+- **Site metadata**: Page title and description (minimal, in scope).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: A first-time visitor can identify what the company does and find the "Request a quote" button within 10 seconds of the page loading, without scrolling on desktop.
-- **SC-002**: After activating "Request a quote", the visitor lands at the contact form section within 1 second, 100% of the time across mouse, touch, and keyboard.
+- **SC-002**: After activating "Request a quote", the visitor reaches the contact section without a page reload, and keyboard focus continues from it, 100% of the time across mouse, touch, and keyboard.
 - **SC-003**: At every viewport width from 320 to 1920 pixels, 0 instances of horizontal scrolling and 0 clipped or overlapping content.
 - **SC-004**: 100% of interactive elements show a visible focus indicator, and a full keyboard-only pass visits them in visual order with no keyboard traps.
 - **SC-005**: 100% of images have non-empty, descriptive alternative text, and the page has exactly 1 main heading.
@@ -83,13 +84,14 @@ A visitor opens the website and sees a clear one-page landing for a bridge const
 - "Mobile" means viewports narrower than 768 pixels, "tablet" roughly 768–1023 pixels, and "desktop" 1024 pixels and wider; the page is supported from 320 pixels wide.
 - Services and work stages are each presented as a name with a one-line description, and the description is part of their content.
 - Content is in a single language (English).
+- A minimal page title and description are in scope (kept in the static content data); only richer SEO stays out of scope.
 - The page follows the project constitution (accessibility to WCAG 2.1 AA, content kept in typed data, simplicity); no extra sections, pages, or features beyond this spec are included.
 - The contact form itself, validation, and submission are delivered by a separate feature that will fill the placeholder container.
 
 ## Out of Scope
 
 - Contact form fields, validation, and submission.
-- SEO metadata and Lighthouse optimization.
+- Richer SEO (social cards, structured data, sitemap) and Lighthouse optimization. A minimal page title and description are in scope.
 - Multiple pages and navigation menus beyond in-page scrolling.
 - Blog, CMS, login, and user accounts.
 - Animations and dark mode.

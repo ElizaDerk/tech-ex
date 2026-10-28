@@ -9,7 +9,7 @@
 A single-route, fully static one-page landing for a fictional bridge construction company: Hero, Services, Projects,
 WorkStages, ContactSection (placeholder), Footer. Built as a Next.js App Router app (TypeScript strict, Tailwind CSS,
 npm) using server components only. All visible text and image metadata live in typed constants in `src/data`; section
-components in `src/components` receive that content and hold no hard-coded text. The hero CTA is a plain
+components in `src/components` receive that content and hold no hard-coded text; Services, Projects and WorkStages share one `Section` component. The hero CTA is a plain
 `<a href="#contact">`; scrolling is handled by CSS (`scroll-behavior: smooth` and `scroll-margin-top`), with no scroll
 JavaScript. Layout is mobile-first (one column below `md`, multi-column from `md`). The repository has no application
 yet, so the first tasks scaffold and configure tooling (Next.js, Tailwind, ESLint flat config, Prettier) before any
@@ -50,13 +50,13 @@ components; no hard-coded visible text in components.
 |---|---|---|
 | I. Separation of concerns (`src/app`, `src/components`, `src/data`) | Pass | Page in `src/app`, sections in `src/components`, content in `src/data`. `src/lib` and `src/schemas` are not created (nothing belongs there yet). |
 | I. Server components by default | Pass | All components are server components; no `"use client"`. |
-| I. Reuse, single responsibility, no duplication | Pass | One component per section; a shared `Section` heading/wrapper only if two or more sections repeat the same markup (decided during implementation). |
+| I. Reuse, single responsibility, no duplication | Pass | One component per section; a shared `Section` component (labelled `<section>` plus `h2`) is used by Services, Projects and WorkStages, so the markup is not repeated. |
 | II. TypeScript strict, no `any` | Pass | `strict: true` kept from the scaffold; entity types in `src/data/types.ts`. |
 | II. Zod single-source validation | N/A | No user input and no schema in this feature. |
 | III. Security (secrets, `.env`, honeypot) | Pass / N/A | No secrets or forms. `.env*` stays ignored in the merged `.gitignore`. `.env.example` is not needed yet because there are no variables. |
 | IV. WCAG 2.1 AA, semantic HTML, visible focus | Pass | Semantic landmarks, heading hierarchy, `focus-visible` styles, contrast check in the manual pass. |
 | IV. `next/image` for images | Pass | All images use `next/image`. |
-| IV. Next.js Metadata API for page metadata | Pass | Layout exports a minimal `metadata` (title, description) and sets `lang="en"`. Full SEO work remains out of scope. |
+| IV. Next.js Metadata API for page metadata | Pass | Layout exports a minimal `metadata` (title, description) built from `src/data/metadata.ts`, and sets `lang="en"`. Full SEO work remains out of scope. |
 | V. Simplicity, no unspecified features or libraries | Pass | No extra dependencies beyond tooling that the request names. No nav, animations, or dark mode. |
 | Quality gate: scripts `lint`, `lint:fix`, `format`, `format:check` | Pass | Added in the tooling tasks. |
 | Quality gate: root `.prettierrc` used as is | Pass | Not modified; `prettier-plugin-tailwindcss` is enabled through the CLI/config without editing `.prettierrc` (see R3). |
@@ -95,14 +95,15 @@ src/
 │   └── page.tsx                                  # <main> composing the sections
 ├── components/
 │   ├── Hero.tsx                                  # <header> with the single h1 and CTA anchor
-│   ├── Services.tsx                              # <section>, h2, h3 per service
-│   ├── Projects.tsx                              # <section>, h2, cards with next/image and h3
-│   ├── WorkStages.tsx                            # <section>, h2, ordered list, h3 per stage
+│   ├── Section.tsx                               # shared labelled <section> with h2 (headingId, heading, children)
+│   ├── Services.tsx                              # uses Section, h3 per service
+│   ├── Projects.tsx                              # uses Section, cards with next/image and h3
+│   ├── WorkStages.tsx                            # uses Section, ordered list, h3 per stage
 │   ├── ContactSection.tsx                        # <section id="contact">, h2 only (placeholder)
 │   └── Footer.tsx                                # <footer>
 └── data/
-    ├── types.ts                                  # HeroContent, Service, Project, WorkStage, ContactContent, FooterContent
-    ├── hero.ts  services.ts  projects.ts  work-stages.ts  contact.ts  footer.ts
+    ├── types.ts                                  # SiteMetadata, HeroContent, Service, Project, WorkStage, ContactContent, FooterContent
+    ├── metadata.ts  hero.ts  services.ts  projects.ts  work-stages.ts  contact.ts  footer.ts
 ```
 
 **Structure Decision**: Single Next.js project with the `src/` layout required by the constitution. `src/lib`,
@@ -134,7 +135,8 @@ src/
 
 ### Content and types
 
-- `src/data/types.ts` defines one exported type per spec entity (see [data-model.md](./data-model.md)).
+- `src/data/types.ts` defines one exported type per spec entity, including `SiteMetadata` for the page title and
+  description (see [data-model.md](./data-model.md)).
 - Each data file exports a typed constant (for example `export const services: Service[]`). The exact counts (4 / 3 / 4)
   and order are properties of the data, not enforced in components.
 - Components import from `src/data` directly, or accept props from `page.tsx` (default: `page.tsx` imports data and
@@ -145,7 +147,9 @@ src/
 - `page.tsx` renders `<main>` containing Hero, Services, Projects, WorkStages, ContactSection in order, then Footer
   outside `<main>`. Hero is a `<header>` as the first child of `<main>` and holds the only `h1`.
 - Headings: `h1` (hero) → `h2` per section → `h3` for each service, project card, and stage. Each `<section>` is named
-  with `aria-labelledby` pointing at its `h2`.
+  with `aria-labelledby` pointing at its `h2`. Services, Projects and WorkStages get the `<section>` and `h2` from the shared
+  `Section` component (props `headingId`, `heading`, `children`); ContactSection keeps its own markup because it needs the
+  `id` and an optional intro.
 - Work stages use an ordered list (`<ol>`) so sequence is conveyed; services and projects use lists too.
 
 ### Scrolling and focus
@@ -193,9 +197,11 @@ src/
 7. Company name, headline, and project texts are invented placeholder copy written into `src/data` (fictional, no real
    names).
 8. A minimal `metadata` export (title, description) is included because the constitution requires the Metadata API for
-   page metadata; richer SEO stays out of scope.
-9. The CTA target is stored in hero data (`ctaTargetId: "contact"`) and rendered as `#${id}`, matching the spec's
-   "target section" field.
+   page metadata; the strings live in `src/data/metadata.ts` (typed `SiteMetadata`), and the spec now lists this as in
+   scope. Richer SEO stays out of scope.
+9. The CTA target is stored in hero data (`ctaTargetId`) and rendered as `#${id}`, matching the spec's "target section"
+   field. The id is defined once as the exported constant `contactId` in `src/data/contact.ts`; `hero.ts` and `contact.ts`
+   both use it, so the link and the section id cannot drift apart.
 
 ## Open Questions
 
