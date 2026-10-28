@@ -9,9 +9,9 @@ Defined once in `src/schemas/contact.ts`. The TypeScript type is `z.infer<typeof
 | `firstName` | string | yes | trimmed, at least 1 character | `firstname` |
 | `lastName` | string | yes | trimmed, at least 1 character | `lastname` |
 | `email` | string | yes | trimmed, valid email format | `email` |
-| `phone` | string | no | empty allowed; otherwise only digits, spaces, `+`, `-`, `(`, `)`, length 7 to 20 | `phone` (omitted when empty) |
+| `phone` | string | no | trimmed; empty allowed; otherwise only digits, spaces, `+`, `-`, `(`, `)`, at least one digit, length 7 to 20 | `phone` (omitted when empty) |
 | `message` | string | yes | trimmed, 10 to 1000 characters | `message` |
-| `website` | string | no | honeypot; real visitors leave it empty; never sent to HubSpot | none |
+| `contact_hp` | string | no | honeypot; real visitors leave it empty; never sent to HubSpot | none |
 
 ## Form content (`src/data/contact.ts`)
 

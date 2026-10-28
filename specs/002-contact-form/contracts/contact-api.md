@@ -11,7 +11,7 @@
 	"email": "string",
 	"phone": "string (optional)",
 	"message": "string",
-	"website": "string (honeypot, must be empty for real visitors)"
+	"contact_hp": "string (honeypot, must be empty for real visitors)"
 }
 ```
 
@@ -19,14 +19,14 @@
 
 | Status | Body | When |
 |--------|------|------|
-| 200 | `{"ok": true}` | Submitted to HubSpot, or honeypot filled (silently dropped; indistinguishable) |
+| 200 | `{"ok": true}` | Submitted to HubSpot, or honeypot filled (silently discarded; same response as a success) |
 | 400 | `{"error": "validation_failed", "fieldErrors": {"<field>": "<message key>"}}` | Body fails the shared Zod schema |
 | 400 | `{"error": "invalid_request"}` | Body is not valid JSON |
 | 502 | `{"error": "submission_failed"}` | HubSpot rejected the request, was unreachable or timed out, or env vars are missing |
 
 `fieldErrors` values are stable message keys, not text. The client resolves them through `errorMessages` in `src/data/contact.ts`.
 
-No response contains HubSpot output, stack traces or internal messages.
+No response contains HubSpot output, stack traces or internal messages. On a 502 the server logs only a sanitized error code with `console.error`, never the HubSpot response body or personal data.
 
 ## Outbound (server to HubSpot)
 

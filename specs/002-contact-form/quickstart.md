@@ -15,6 +15,7 @@
    - Submit valid data (phone empty): the button disables with a loading state, then the confirmation replaces the form, and the contact appears in HubSpot.
 4. Failure path: blank `HUBSPOT_PORTAL_ID` and restart. A valid submit shows the generic error, values remain, and no internal text appears.
 5. Server validation: `curl -X POST localhost:3000/api/contact -H 'Content-Type: application/json' -d '{}'` returns 400 with `fieldErrors`.
-6. Honeypot: `curl` with a valid body plus `"website":"x"` returns 200 and nothing appears in HubSpot.
+6. Honeypot: `curl` with a valid body plus `"contact_hp":"x"` returns 200 and nothing appears in HubSpot.
 7. Keyboard: tab through every field and the button with visible focus. Confirm the honeypot is skipped.
-8. Confirm `.env.local` is untracked (`git status`) and the secrets do not appear in the browser bundle.
+8. Accessibility: run a Lighthouse accessibility audit on `/#contact` (Chrome DevTools, no new tooling) and fix any issue in the form area. Then do one VoiceOver pass over the form: submit empty and confirm each field error is announced as it appears, and that labels, hints and the loading and success messages are read.
+9. Confirm `.env.local` is untracked (`git status`) and the secrets do not appear in the browser bundle.

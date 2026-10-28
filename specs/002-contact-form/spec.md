@@ -24,11 +24,11 @@ A visitor to the website wants the company to contact them. In the contact secti
 2. **Given** a visitor submits the form with one or more required fields empty, **When** the form is processed, **Then** submission is rejected, **And** each missing field displays an appropriate validation error message next to it.
 3. **Given** a visitor enters an email address in an invalid format, **When** they submit the form, **Then** submission is rejected, **And** the email field displays an appropriate validation error message.
 4. **Given** a visitor leaves the phone number empty, **When** they submit an otherwise valid form, **Then** submission succeeds.
-5. **Given** a visitor enters a phone number with disallowed characters or a length outside 7 to 20 characters, **When** they submit the form, **Then** submission is rejected, **And** the phone field displays an appropriate validation error message.
+5. **Given** a visitor enters a phone number with disallowed characters, no digit, or a length outside 7 to 20 characters, **When** they submit the form, **Then** submission is rejected, **And** the phone field displays an appropriate validation error message.
 6. **Given** a visitor enters a message shorter than 10 or longer than 1000 characters, **When** they submit the form, **Then** submission is rejected, **And** the message field displays an appropriate validation error message.
 7. **Given** a visitor submits a form that contains validation errors, **When** the form is redisplayed, **Then** all entered values are retained.
 8. **Given** the CRM request fails, **When** the visitor submits a valid form, **Then** a friendly error message is displayed, **And** the entered values are retained so the visitor can retry.
-9. **Given** the hidden honeypot field is filled, **When** the form is submitted, **Then** the submission is rejected silently, **And** nothing is sent to the CRM.
+9. **Given** the hidden honeypot field is filled, **When** the form is submitted, **Then** the submission is silently discarded and the sender receives the same response as a success, **And** nothing is sent to the CRM.
 10. **Given** a visitor uses a keyboard or screen reader, **When** validation errors appear, **Then** each error is linked to its field and announced to assistive technologies.
 
 ---
@@ -40,7 +40,7 @@ A visitor to the website wants the company to contact them. In the contact secti
 - Fields containing only spaces are treated as empty for required fields.
 - Visitor double-clicks submit or presses Enter repeatedly: only one submission is sent, because the submit button is disabled while the request is in progress.
 - Submission bypasses the browser (for example, a direct request with invalid data): the server rejects it with the same field errors; browser-side checks are never the only protection.
-- Honeypot is filled by a bot: the response looks the same as success to the sender's side where possible, no error details are revealed, and nothing reaches the CRM.
+- Honeypot is filled by a bot: the submission is silently discarded, the sender receives the same response as a success, no error details are revealed, and nothing reaches the CRM.
 - CRM is slow or unreachable: the visitor sees a friendly retry message, never raw CRM output or internal error details.
 - Visitor loses connection mid-submission: a friendly error is shown and entered values remain.
 
@@ -51,10 +51,10 @@ A visitor to the website wants the company to contact them. In the contact secti
 - **FR-001**: The contact form MUST appear inside the existing contact section of the landing page, replacing its placeholder content area, with no changes to other sections.
 - **FR-002**: The form MUST collect first name (required), last name (required), email address (required), phone number (optional), and message (required).
 - **FR-003**: The email address MUST be in a valid email format.
-- **FR-004**: If a phone number is provided, it MUST contain only digits, spaces, plus signs, hyphens, and parentheses, and MUST be 7 to 20 characters long.
+- **FR-004**: If a phone number is provided, it MUST be trimmed first, MUST contain only digits, spaces, plus signs, hyphens, and parentheses, MUST contain at least one digit, and MUST be 7 to 20 characters long.
 - **FR-005**: The message MUST be 10 to 1000 characters long.
 - **FR-006**: The form MUST include a hidden honeypot field that real visitors never see or fill.
-- **FR-007**: If the honeypot field is filled, the submission MUST be rejected silently and nothing MUST be sent to the CRM.
+- **FR-007**: If the honeypot field is filled, the submission MUST be silently discarded; the sender receives the same response as a success, and nothing MUST be sent to the CRM.
 - **FR-008**: Valid submissions MUST be forwarded to the company's CRM (HubSpot) by the server; the visitor's browser MUST NOT contact the CRM directly.
 - **FR-009**: All input MUST be validated on the server regardless of any validation performed in the browser.
 - **FR-010**: Validation errors MUST be displayed next to the corresponding form fields, with a message that tells the visitor what to fix.
@@ -76,7 +76,7 @@ A visitor to the website wants the company to contact them. In the contact secti
 ### Measurable Outcomes
 
 - **SC-001**: A visitor can complete and submit the form with valid data in under 2 minutes and sees the confirmation message within 5 seconds of submitting under normal conditions.
-- **SC-002**: 100% of submissions with invalid data (missing fields, bad email, bad phone, out-of-range message length) are rejected with a field-level error and none reach the CRM.
+- **SC-002**: 100% of submissions with invalid data (missing fields, bad email, bad phone including a phone with no digit, out-of-range message length) are rejected with a field-level error and none reach the CRM.
 - **SC-003**: 100% of submissions with the honeypot filled are rejected and none reach the CRM.
 - **SC-004**: In 100% of failed submissions, the visitor's entered values are still present in the form.
 - **SC-005**: No internal error text or raw CRM response is ever visible to a visitor, including when the CRM is unavailable.

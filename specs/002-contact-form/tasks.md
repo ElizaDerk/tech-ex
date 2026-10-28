@@ -52,9 +52,9 @@ description: "Task list for the Contact Form feature"
   - `firstName`: "trimmed, at least 1 character" (whitespace-only counts as empty). Issue message key `firstName.required`.
   - `lastName`: "trimmed, at least 1 character". Issue message key `lastName.required`.
   - `email`: "trimmed, valid email format". Empty gives key `email.required`; bad format gives key `email.invalid`.
-  - `phone`: optional string; "empty allowed; otherwise only digits, spaces, `+`, `-`, `(`, `)`, length 7 to 20". Use the regex `^[0-9\s+\-()]+$` and length 7 to 20 for non-empty values. Issue message key `phone.invalid` for both the character and the length failure.
+  - `phone`: optional string; "trimmed; empty allowed; otherwise only digits, spaces, `+`, `-`, `(`, `)`, at least one digit, length 7 to 20". Trim first, then for non-empty values use the regex `^[0-9\s+\-()]+$`, require at least one digit (`/\d/`), and length 7 to 20. Issue message key `phone.invalid` for the character, no-digit and length failures.
   - `message`: "trimmed, 10 to 1000 characters". Under 10 (including empty) gives key `message.tooShort`; over 1000 gives key `message.tooLong`.
-  - `website` (honeypot): optional string with no restrictions. The schema must NOT reject a filled honeypot.
+  - `contact_hp` (honeypot): optional string with no restrictions. The schema must NOT reject a filled honeypot.
   - Validation messages are stable message keys (as above), never English text, and are set as the Zod issue `message`.
   - Every required field (`firstName`, `lastName`, `email`, `message`) MUST return its message key both for an empty or whitespace-only string AND when the field is missing or not a string (`undefined`), so a request body like `{}` produces only keys in `fieldErrors` (set the `required_error` / `invalid_type_error` equivalent for the installed Zod version, e.g. via the `error` param in Zod 4).
 - [ ] T006 [P] Add the `ContactFormContent` type to `src/data/types.ts` describing the static form copy: field labels (firstName, lastName, email, phone, message), hints (at least phone and message, e.g. allowed phone characters and message length), placeholders if used, `submitLabel`, `submittingLabel`, `successTitle`, `successText`, `genericError`, and `errorMessages: Record<string, string>` (message key to English text). Do not change the existing `ContactContent` type.
@@ -67,11 +67,11 @@ description: "Task list for the Contact Form feature"
 
 **Goal**: A visitor fills in the form in the contact section, it is validated on client and server, forwarded to HubSpot by the server, and the visitor sees a confirmation or a friendly error with their values kept.
 
-**Independent Test**: Follow `specs/002-contact-form/quickstart.md`: empty submit shows field errors; invalid email, phone and message lengths show their own errors with values kept; a valid submit shows loading then the confirmation and the contact appears in HubSpot; a blank `HUBSPOT_PORTAL_ID` shows the generic error with values kept; `curl` with `{}` returns 400 `fieldErrors`; `curl` with a filled `website` returns 200 and nothing reaches HubSpot.
+**Independent Test**: Follow `specs/002-contact-form/quickstart.md`: empty submit shows field errors; invalid email, phone and message lengths show their own errors with values kept; a valid submit shows loading then the confirmation and the contact appears in HubSpot; a blank `HUBSPOT_PORTAL_ID` shows the generic error with values kept; `curl` with `{}` returns 400 `fieldErrors`; `curl` with a filled `contact_hp` returns 200 and nothing reaches HubSpot.
 
 ### Tests for User Story 1
 
-- [ ] T007 [US1] Create `src/schemas/contact.test.ts` (Vitest, `import {describe, it, expect} from 'vitest'`, schema imported via `@/schemas/contact`) with cases: valid data parses; each required field empty (`firstName`, `lastName`, `email`, `message`) fails with the matching key; each required field missing (`undefined`) fails with the same key, and `{}` yields only message keys for those four fields; whitespace-only `firstName`, `lastName`, `email` and `message` fail; invalid email fails with `email.invalid`; empty `phone` is accepted and `phone` omitted is accepted; phone with letters fails with `phone.invalid`; phone lengths 6 (fail), 7 (pass), 20 (pass), 21 (fail), using only allowed characters; message lengths 9 (fail `message.tooShort`), 10 (pass), 1000 (pass), 1001 (fail `message.tooLong`); honeypot filled: parse succeeds and the parsed data exposes `website` with the value. Run `npm run test` and make it pass.
+- [ ] T007 [US1] Create `src/schemas/contact.test.ts` (Vitest, `import {describe, it, expect} from 'vitest'`, schema imported via `@/schemas/contact`) with cases: valid data parses; each required field empty (`firstName`, `lastName`, `email`, `message`) fails with the matching key; each required field missing (`undefined`) fails with the same key, and `{}` yields only message keys for those four fields; whitespace-only `firstName`, `lastName`, `email` and `message` fail; invalid email fails with `email.invalid`; empty `phone` is accepted and `phone` omitted is accepted; phone with letters fails with `phone.invalid`; phone made only of spaces (for example 7 spaces) fails with `phone.invalid`; phone made only of hyphens (for example `-------`) fails with `phone.invalid`; phone lengths 6 (fail), 7 (pass), 20 (pass), 21 (fail), using only allowed characters; message lengths 9 (fail `message.tooShort`), 10 (pass), 1000 (pass), 1001 (fail `message.tooLong`); honeypot filled: parse succeeds and the parsed data exposes `contact_hp` with the value. Run `npm run test` and make it pass.
 
 ### Implementation for User Story 1
 
@@ -79,27 +79,29 @@ description: "Task list for the Contact Form feature"
 - [ ] T009 [P] [US1] Create `src/lib/hubspot.ts` exporting `submitToHubspot(data: ContactInput): Promise<void>` and a typed `HubspotError` class extending `Error`. Behavior from plan.md:
   - Read `HUBSPOT_PORTAL_ID`, `HUBSPOT_FORM_ID`, `HUBSPOT_API_HOST` from `process.env` inside the function; if any is missing or empty, throw `HubspotError`.
   - `POST` to `https://{HUBSPOT_API_HOST}/submissions/v3/integration/submit/{HUBSPOT_PORTAL_ID}/{HUBSPOT_FORM_ID}` with `Content-Type: application/json`, no auth header, no `context`, no `legalConsentOptions`.
-  - Body: `{fields: [{objectTypeId: '0-1', name, value}]}` with mapping `firstName→firstname`, `lastName→lastname`, `email→email`, `phone→phone`, `message→message`. Omit the `phone` field when it is empty or undefined. Never send `website`.
+  - Body: `{fields: [{objectTypeId: '0-1', name, value}]}` with mapping `firstName→firstname`, `lastName→lastname`, `email→email`, `phone→phone`, `message→message`. Omit the `phone` field when it is empty or undefined. Never send `contact_hp`.
   - Use `signal: AbortSignal.timeout(10000)`.
-  - Throw `HubspotError` for a non-2xx response, a network error, or a timeout. Never include the HubSpot response body in the error message.
+  - Throw `HubspotError` for a non-2xx response, a network error, or a timeout. `HubspotError` carries a sanitized `code` property (`hubspot_config_missing`, `hubspot_non_2xx`, `hubspot_network`, `hubspot_timeout`). Never include the HubSpot response body or personal data in the error message or code.
   - No `console.log`, no `any`.
 - [ ] T010 [P] [US1] Create `src/lib/contact-errors.ts`: the single error-to-response table from plan.md. Export code constants/type for `validation_failed`, `invalid_request` and `submission_failed` with their HTTP statuses (400, 400, 502). Codes only; no user-facing text (text lives in `src/data/contact.ts`).
 - [ ] T011 [US1] Create `src/app/api/contact/route.ts` exporting `POST(request: Request)`. Request/response handling only; delegate to `src/lib`. Steps, in order:
   1. Parse `request.json()`; if it throws, return 400 `{error: 'invalid_request'}`.
   2. `contactSchema.safeParse`; on failure return 400 `{error: 'validation_failed', fieldErrors: {<field>: <message key>}}` using the first issue message per field (keys, not text).
-  3. If `website` is non-empty, return 200 `{ok: true}` without calling HubSpot.
-  4. `await submitToHubspot(data)`; on success return 200 `{ok: true}`; on any thrown error return 502 `{error: 'submission_failed'}`.
+  3. If `contact_hp` is non-empty, return 200 `{ok: true}` without calling HubSpot.
+  4. `await submitToHubspot(data)`; on success return 200 `{ok: true}`; on any thrown error return 502 `{error: 'submission_failed'}`. Before returning the 502, call `console.error` with only the sanitized code (the `HubspotError` `code`, or `hubspot_unknown` for any other error). Never log the HubSpot response body, the error message, the stack or any submitted data.
+  - The honeypot check and the `fieldErrors` mapping stay in this handler as request/response handling.
   - Never return HubSpot output, stack traces or internal messages. No `console.log`. Use `contact-errors.ts` for codes and statuses. (Depends on T005, T009, T010.)
-- [ ] T012 [US1] Create `src/components/ContactForm.tsx` as a `'use client'` component (default export style: match `src/components/*.tsx`, which use named exports). (Depends on T005, T008, T011.)
+- [ ] T012 [P] [US1] Create `src/lib/send-contact.ts` exporting `sendContact(values: ContactInput): Promise<SendContactResult>`, where `SendContactResult` is a discriminated union: `{status: 'success'}`, `{status: 'fieldErrors', fieldErrors: Record<string, string>}` (message keys), or `{status: 'error'}`. It does `fetch('/api/contact', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(values)})`. A 200 with `{ok: true}` gives success; a 400 with `fieldErrors` gives fieldErrors; any other response, a malformed body or a thrown fetch error gives error. It never throws and never exposes response text. No `console.log`, no `any`. (Depends on T005; the response shape is in `contracts/contact-api.md`.)
+- [ ] T013 [US1] Create `src/components/ContactForm.tsx` as a `'use client'` component with a named export `ContactForm`, like the other components in `src/components/`. (Depends on T005, T008, T012.)
   - `useForm<ContactInput>({resolver: zodResolver(contactSchema)})`, form has `noValidate`.
-  - Fields: firstName, lastName, email (`type="email"`), phone (`type="tel"`), message (`<textarea>`), each with a visible `<label htmlFor>`, optional hint `<p id="{field}-hint">`, and an error `<p id="{field}-error">` rendered when invalid. Set `aria-describedby` to the hint and error ids that exist and `aria-invalid` on each input. Resolve error text via `contactForm.errorMessages[error.message]`.
-  - Honeypot: input named `website` wrapped in a visually hidden element (use Tailwind `sr-only`-style absolute positioning, NOT `display:none`), `tabIndex={-1}`, `autoComplete="off"`, `aria-hidden="true"`, with a plain label text from `src/data` or no visible label.
-  - Submit: `fetch('/api/contact', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(values)})`. While `isSubmitting` the button is `disabled` and shows `submittingLabel`.
-  - On 400 with `fieldErrors`, call `setError(field, {message: key})` for each. On any other non-OK response or a thrown fetch error, show `genericError`. Never reset the form on failure.
-  - On `{ok: true}`, replace the form with the success title and text.
-  - One `<div role="status" aria-live="polite">` that is always mounted and holds the submit-level result (success or generic error). Do not use `role="alert"` on field errors.
+  - Fields: firstName, lastName, email (`type="email"`), phone (`type="tel"`), message (`<textarea>`), each with a visible `<label htmlFor>`, optional hint `<p id="{field}-hint">`, and an error `<p id="{field}-error" role="alert">` rendered when invalid. Set `aria-describedby` to the hint and error ids that exist and `aria-invalid` on each input. Resolve error text via `contactForm.errorMessages[error.message]`.
+  - Honeypot: input named `contact_hp` wrapped in a visually hidden element (use Tailwind `sr-only`-style absolute positioning, NOT `display:none`), `tabIndex={-1}`, `autoComplete="off"`, `aria-hidden="true"`, with a plain label text from `src/data` or no visible label.
+  - Submit: call `sendContact(values)` from `@/lib/send-contact` (no `fetch` in the component). While `isSubmitting` the button is `disabled` and shows `submittingLabel`.
+  - On `{status: 'fieldErrors'}`, call `setError(field, {message: key})` for each. On `{status: 'error'}`, show `genericError`. Never reset the form on failure.
+  - On `{status: 'success'}`, replace the form with the success title and text.
+  - One `<div role="status" aria-live="polite">` that is always mounted and holds the submit-level result (success or generic error). Field errors use `role="alert"` (above) and are not placed in this region.
   - Visible focus states on all controls (Tailwind `focus-visible:` ring/outline). Style with Tailwind to match the existing sections; all strings from `contactForm`.
-- [ ] T013 [US1] Edit `src/app/page.tsx` to render `<ContactForm />` as the children of `<ContactSection {...contact} />` (add the import `@/components/ContactForm`). Do not change any other section or `ContactSection.tsx`.
+- [ ] T014 [US1] Edit `src/app/page.tsx` to render `<ContactForm />` as the children of `<ContactSection {...contact} />` (add the import `@/components/ContactForm`). Do not change any other section or `ContactSection.tsx`.
 
 **Checkpoint**: User Story 1 is fully functional and testable independently.
 
@@ -109,9 +111,9 @@ description: "Task list for the Contact Form feature"
 
 **Purpose**: Quality gates and quickstart validation
 
-- [ ] T014 Run `npm run format` then `npm run lint` and `npm run format:check`; fix all issues in the new and edited files.
-- [ ] T015 Run `npm run test` and `npm run build`; fix any type errors (strict mode, no `any`).
-- [ ] T016 Run through every check in `specs/002-contact-form/quickstart.md` (items 3 to 8) with a real `.env.local`: empty submit, bad inputs, valid submit, failure path with blank `HUBSPOT_PORTAL_ID`, `curl` validation and honeypot calls, keyboard-only pass (honeypot skipped), and confirm `.env.local` is untracked and no HubSpot values appear in the client bundle (`grep -r HUBSPOT .next/static` returns nothing).
+- [ ] T015 Run `npm run format` then `npm run lint` and `npm run format:check`; fix all issues in the new and edited files.
+- [ ] T016 Run `npm run test` and `npm run build`; fix any type errors (strict mode, no `any`).
+- [ ] T017 Run through every check in `specs/002-contact-form/quickstart.md` (items 3 to 9) with a real `.env.local`: empty submit, bad inputs, valid submit, failure path with blank `HUBSPOT_PORTAL_ID` (also confirm the server terminal shows only a sanitized code from `console.error`, no HubSpot body or personal data), `curl` validation and honeypot calls, keyboard-only pass (honeypot skipped), a Lighthouse accessibility audit of `/#contact` with the form-area issues fixed, one VoiceOver pass over the form (each field error announced as it appears, labels and hints read, loading and success messages read; no new tooling), and confirm `.env.local` is untracked and no HubSpot values appear in the client bundle (`grep -r HUBSPOT .next/static` returns nothing).
 
 ---
 
@@ -129,14 +131,15 @@ description: "Task list for the Contact Form feature"
 - T007 (tests) needs T005 and T002/T003.
 - T008, T009, T010 are independent of each other (T009 needs T005 for the `ContactInput` type; T008 needs T006).
 - T011 needs T005, T009, T010.
-- T012 needs T005, T008, T011 (the API shape).
-- T013 needs T012.
+- T012 needs T005 (and uses the response shape from `contracts/contact-api.md`).
+- T013 needs T005, T008, T012.
+- T014 needs T013.
 
 ### Parallel Opportunities
 
 - T003 and T004 together after T002.
 - T005 and T006 together.
-- T007, T008, T009, T010 together once Phase 2 is done.
+- T007, T008, T009, T010, T012 together once Phase 2 is done.
 
 ```text
 # After Phase 2:
@@ -144,6 +147,7 @@ Task: "Schema tests in src/schemas/contact.test.ts"        (T007)
 Task: "Form copy in src/data/contact.ts"                    (T008)
 Task: "HubSpot client in src/lib/hubspot.ts"                (T009)
 Task: "Error table in src/lib/contact-errors.ts"            (T010)
+Task: "Client fetch in src/lib/send-contact.ts"             (T012)
 ```
 
 ---
