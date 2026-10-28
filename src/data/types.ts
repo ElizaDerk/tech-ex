@@ -41,3 +41,24 @@ export type FooterContent = {
 	companyName: string;
 	notice: string;
 };
+
+export type ContactFormContent = {
+	labels: {
+		firstName: string;
+		lastName: string;
+		email: string;
+		phone: string;
+		message: string;
+		honeypot: string;
+	};
+	hints: {
+		phone: string;
+		message: string;
+	};
+	submitLabel: string;
+	submittingLabel: string;
+	successTitle: string;
+	successText: string;
+	genericError: string;
+	errorMessages: Record<string, string>;
+};
