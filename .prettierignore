@@ -1,0 +1,8 @@
+.next
+node_modules
+.specify
+.claude
+specs
+package-lock.json
+next-env.d.ts
+.prettierrc
