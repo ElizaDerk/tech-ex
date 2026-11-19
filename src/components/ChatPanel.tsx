@@ -1,8 +1,9 @@
 'use client';
 
-import {useState} from 'react';
-import type {Dispatch, FormEvent, SetStateAction} from 'react';
+import {useEffect, useRef, useState} from 'react';
+import type {Dispatch, FormEvent, KeyboardEvent, MouseEvent, SetStateAction} from 'react';
 import {chat} from '@/data/chat';
+import {contactId} from '@/data/contact';
 import {sendChat} from '@/lib/send-chat';
 import {MAX_MESSAGES, chatSchema} from '@/schemas/chat';
 import type {ChatMessage} from '@/schemas/chat';
@@ -10,7 +11,7 @@ import type {ChatMessage} from '@/schemas/chat';
 type ChatPanelProps = {
 	messages: ChatMessage[];
 	setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
-	onClose: () => void;
+	onClose: (restoreFocus?: boolean) => void;
 };
 
 // The visitor's message plus the answer must fit in the conversation limit.
@@ -27,7 +28,25 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 	const [honeypot, setHoneypot] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
+	const inputRef = useRef<HTMLInputElement>(null);
 	const conversationFull = messages.length >= CONVERSATION_FULL;
+
+	useEffect(() => {
+		inputRef.current?.focus();
+	}, []);
+
+	function onKeyDown(event: KeyboardEvent<HTMLElement>) {
+		if (event.key === 'Escape') onClose();
+	}
+
+	function onContactClick(event: MouseEvent<HTMLAnchorElement>) {
+		event.preventDefault();
+		onClose(false);
+		requestAnimationFrame(() => {
+			document.getElementById(contactId)?.scrollIntoView();
+			document.getElementById('firstName')?.focus();
+		});
+	}
 
 	async function onSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -59,7 +78,10 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 
 	return (
 		<section
+			id="chat-panel"
+			role="dialog"
 			aria-labelledby="chat-heading"
+			onKeyDown={onKeyDown}
 			className="fixed right-4 bottom-20 left-4 z-50 flex max-h-[70vh] flex-col rounded border border-slate-400 bg-white shadow-lg sm:left-auto sm:w-96"
 		>
 			<div className="flex items-center justify-between gap-2 border-b border-slate-300 p-4">
@@ -71,13 +93,16 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 				</h2>
 				<button
 					type="button"
-					onClick={onClose}
+					onClick={() => onClose()}
 					className={`rounded border border-slate-400 px-3 py-1 text-sm ${focusClass}`}
 				>
 					{chat.closeLabel}
 				</button>
 			</div>
-			<div className="flex-1 space-y-3 overflow-y-auto p-4">
+			<div
+				role="log"
+				className="flex-1 space-y-3 overflow-y-auto p-4"
+			>
 				{messages.map((message, index) => (
 					<p
 						key={index}
@@ -88,7 +113,14 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 				))}
 			</div>
 			<div className="border-t border-slate-300 p-4">
-				<p className="mb-3 text-sm text-slate-700">{chat.aiNote}</p>
+				<p className="text-sm text-slate-700">{chat.aiNote}</p>
+				<a
+					href={`#${contactId}`}
+					onClick={onContactClick}
+					className={`mt-1 mb-3 inline-block text-sm font-medium underline ${focusClass}`}
+				>
+					{chat.contactLinkText}
+				</a>
 				<form
 					onSubmit={onSubmit}
 					className="relative grid gap-2"
@@ -100,6 +132,7 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 						{chat.labels.input}
 					</label>
 					<input
+						ref={inputRef}
 						id="chat-input"
 						type="text"
 						value={text}
@@ -126,7 +159,11 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 					>
 						{chat.sendLabel}
 					</button>
-					<p className="min-h-6 text-sm">
+					<p
+						role="status"
+						aria-live="polite"
+						className="min-h-6 text-sm"
+					>
 						{loading && <span>{chat.loadingText}</span>}
 						{conversationFull ? (
 							<span className="text-red-700">{chat.errorMessages.conversation_limit}</span>
