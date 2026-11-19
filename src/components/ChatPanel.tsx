@@ -4,6 +4,7 @@ import {useState} from 'react';
 import type {Dispatch, FormEvent, SetStateAction} from 'react';
 import {chat} from '@/data/chat';
 import {sendChat} from '@/lib/send-chat';
+import {MAX_MESSAGES, chatSchema} from '@/schemas/chat';
 import type {ChatMessage} from '@/schemas/chat';
 
 type ChatPanelProps = {
@@ -12,29 +13,47 @@ type ChatPanelProps = {
 	onClose: () => void;
 };
 
+// The visitor's message plus the answer must fit in the conversation limit.
+const CONVERSATION_FULL = MAX_MESSAGES - 1;
+
+function errorText(key: string): string {
+	return chat.errorMessages[key] ?? chat.genericError;
+}
+
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900';
 
 export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 	const [text, setText] = useState('');
 	const [honeypot, setHoneypot] = useState('');
 	const [loading, setLoading] = useState(false);
-	const [failed, setFailed] = useState(false);
+	const [error, setError] = useState('');
+	const conversationFull = messages.length >= CONVERSATION_FULL;
 
 	async function onSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (loading) return;
+		if (loading || conversationFull) return;
 
-		setFailed(false);
-		setLoading(true);
 		const userMessage: ChatMessage = {role: 'user', content: text};
+		const validation = chatSchema.safeParse({messages: [...messages, userMessage]});
+		if (!validation.success) {
+			const issue = validation.error.issues.find(item => item.path[0] === 'messages' && item.path[2] === 'content');
+			setError(errorText(issue?.message ?? 'message.empty'));
+			return;
+		}
+
+		setError('');
+		setLoading(true);
 		const result = await sendChat({messages: [...messages, userMessage], chat_hp: honeypot});
 		setLoading(false);
 
 		if (result.status === 'success') {
 			setMessages(current => [...current, userMessage, {role: 'assistant', content: result.answer}]);
 			setText('');
+		} else if (result.status === 'error') {
+			setError(errorText(result.code));
 		} else {
-			setFailed(true);
+			const key = Object.values(result.fieldErrors)[0] ?? '';
+			setError(errorText(key));
 		}
 	}
 
@@ -84,6 +103,7 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 						id="chat-input"
 						type="text"
 						value={text}
+						disabled={conversationFull}
 						onChange={event => setText(event.target.value)}
 						className={`block w-full rounded border border-slate-400 bg-white px-3 py-2 ${focusClass}`}
 					/>
@@ -101,14 +121,18 @@ export function ChatPanel({messages, setMessages, onClose}: ChatPanelProps) {
 					</div>
 					<button
 						type="submit"
-						disabled={loading}
+						disabled={loading || conversationFull}
 						className={`rounded bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700 disabled:opacity-60 ${focusClass}`}
 					>
 						{chat.sendLabel}
 					</button>
 					<p className="min-h-6 text-sm">
 						{loading && <span>{chat.loadingText}</span>}
-						{failed && <span className="text-red-700">{chat.genericError}</span>}
+						{conversationFull ? (
+							<span className="text-red-700">{chat.errorMessages.conversation_limit}</span>
+						) : (
+							error && <span className="text-red-700">{error}</span>
+						)}
 					</p>
 				</form>
 			</div>

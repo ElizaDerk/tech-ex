@@ -4,7 +4,8 @@ import {answerChat} from '@/lib/chat';
 import {chatSchema} from '@/schemas/chat';
 
 function errorResponse(error: ChatErrorCode, extra?: Record<string, unknown>) {
-	return Response.json({error, ...extra}, {status: chatErrors[error]});
+	const headers = error === 'rate_limited' ? {'Retry-After': '60'} : undefined;
+	return Response.json({error, ...extra}, {status: chatErrors[error], headers});
 }
 
 export async function POST(request: Request) {
