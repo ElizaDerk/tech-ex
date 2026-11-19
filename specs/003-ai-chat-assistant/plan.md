@@ -41,7 +41,10 @@ Add a floating chat button and panel to the landing page. A client component kee
 | V. Simplicity | Pass | No SDK (plain `fetch` is enough, see research.md), no streaming, no RAG, no shared store. No new dependency. |
 | VI. Responsible AI | Pass | Provider called only from the server. System prompt carries the grounding, decline and injection rules. Prompt and provider output never reach the client. Nothing stored or sent to the CRM. Provider mocked in tests. |
 
-Complexity Tracking: no violations.
+Complexity Tracking:
+
+- The rate limit is per instance and best-effort on Vercel (research.md section 6); requests without `x-forwarded-for` share one "unknown" bucket. On Vercel the header is always set, so this bucket is only hit locally. Accepted for a demo where the provider free-tier quota is the real ceiling.
+- The chat input does not use React Hook Form: it is one text field whose value is appended to a conversation, so a plain form with state is simpler (Principle V). Validation still uses the shared Zod schema.
 
 ## Project Structure
 
