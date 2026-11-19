@@ -53,8 +53,8 @@ Headers: `Content-Type: application/json`, `x-goog-api-key: {GEMINI_API_KEY}`
 {
 	"systemInstruction": {"parts": [{"text": "<system prompt>"}]},
 	"contents": [{"role": "user | model", "parts": [{"text": "..."}]}],
-	"generationConfig": {"temperature": 0.2, "maxOutputTokens": 400, "thinkingConfig": {"<minimal thinking setting, see research.md>": "..."}}
+	"generationConfig": {"temperature": 0.2, "maxOutputTokens": 400, "thinkingConfig": {"thinkingLevel": "LOW"}}
 }
 ```
 
-The answer is read from `candidates[0].content.parts[*].text`. Any non-2xx status, network error, 10-second timeout, or missing text maps to `provider_unavailable`. Field names and the endpoint are to be re-checked against the current Gemini documentation during implementation. This is the only place that knows the provider format (`src/lib/gemini.ts`).
+The answer is read from `candidates[0].content.parts[*].text`. Any non-2xx status, network error, 10-second timeout, or missing text maps to `provider_unavailable`. Confirmed against the Gemini documentation on 2026-11-19: the endpoint, `systemInstruction`, `generationConfig.maxOutputTokens` and the response path. `thinkingConfig.thinkingLevel` is the parameter for Gemini 3 and later; `gemini-3.8-flash` accepts `low`, `medium` and `high` but not `minimal`, and thinking cannot be switched off, so `LOW` is the lowest value. `temperature` is silently ignored on Gemini 3.6 Flash and newer; it is still sent and has no effect. The docs show the key only as a `?key=` query parameter for `generateContent`; the `x-goog-api-key` header is used here and has not yet been checked with a real call (done in the manual quickstart run). This is the only place that knows the provider format (`src/lib/gemini.ts`).

@@ -8,11 +8,11 @@
 
 **Alternatives considered**: A paid provider tier (cost without need for a demo); other providers (no advantage for this scope). Switching later is cheap because only `src/lib/gemini.ts` knows the provider.
 
-**Open item**: confirm at implementation time that the exact model identifier is accepted by the API (the `models` listing endpoint), and update the value in `.env` if the identifier differs.
+**Resolved (2026-11-19)**: `gemini-3.8-flash` is listed as a stable model in the Gemini models documentation, so the identifier is confirmed. It has not yet been tried with a real call.
 
-**Generation settings**: `generateAnswer` sets `generationConfig` with `maxOutputTokens` 400, a low temperature and minimal thinking via `thinkingConfig`. Gemini 3.x Flash models think by default, which adds latency and can consume the output token budget and return an empty answer. An empty answer is treated as `provider_unavailable`.
+**Generation settings**: `generateAnswer` sets `generationConfig` with `maxOutputTokens` 400, a low temperature and low thinking via `thinkingConfig` (`thinkingLevel: "LOW"`). Gemini 3.x Flash models think by default, which adds latency and can consume the output token budget and return an empty answer. An empty answer is treated as `provider_unavailable`.
 
-**Open item**: check in the Gemini docs the exact `thinkingConfig` parameter and the lowest allowed value for `gemini-3.8-flash`.
+**Resolved (2026-11-19)**: the parameter is `generationConfig.thinkingConfig.thinkingLevel`. For `gemini-3.8-flash` the allowed values are `LOW`, `MEDIUM` and `HIGH`; `MINIMAL` is not supported and thinking cannot be turned off. The code uses `LOW`. `temperature` is ignored by this model, so the 0.2 setting has no effect. Because thinking tokens count toward `maxOutputTokens`, an empty answer is still possible and stays mapped to `provider_unavailable`.
 
 ## 2. SDK or plain `fetch`
 

@@ -62,3 +62,20 @@ export type ContactFormContent = {
 	genericError: string;
 	errorMessages: Record<string, string>;
 };
+
+export type ChatContent = {
+	buttonLabel: string;
+	heading: string;
+	closeLabel: string;
+	sendLabel: string;
+	loadingText: string;
+	aiNote: string;
+	contactLinkText: string;
+	labels: {
+		input: string;
+		honeypot: string;
+	};
+	honeypotAnswer: string;
+	genericError: string;
+	errorMessages: Record<string, string>;
+};
