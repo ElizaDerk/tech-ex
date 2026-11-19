@@ -13,6 +13,13 @@ A one-page landing site for a fictional bridge construction company (Spanwright 
 - Spam protection with a hidden honeypot field
 - Loading state, friendly errors, and entered values are kept when a request fails
 - Accessible by design: semantic HTML, labels, visible focus, errors linked to fields
+- Chat assistant:
+  - Answers only from the site content, and declines other questions and points to the contact form
+  - The Gemini call is made on the server
+  - Message length, conversation length and request rate are limited
+  - Hidden honeypot field
+  - Nothing is stored
+  - Accessible
 
 ## Tech stack
 
@@ -20,6 +27,7 @@ A one-page landing site for a fictional bridge construction company (Spanwright 
 - Tailwind CSS
 - React Hook Form and Zod
 - HubSpot Forms API (called from a server route handler)
+- Google Gemini API (called from a server route handler)
 - Vitest (unit tests for the validation schema)
 - ESLint and Prettier
 - Deployed on Vercel
@@ -44,21 +52,23 @@ Open http://localhost:3000.
 
 Set these in `.env.local` locally and in the Vercel project settings for deployment. They are read on the server only.
 
-| Variable | Description |
-|---|---|
-| `HUBSPOT_PORTAL_ID` | HubSpot account (portal) ID |
-| `HUBSPOT_FORM_ID` | ID of the HubSpot form that receives submissions |
-| `HUBSPOT_API_HOST` | HubSpot Forms API host (this account is in the EU region: `api-eu1.hsforms.com`) |
+| Variable            | Description                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| `HUBSPOT_PORTAL_ID` | HubSpot account (portal) ID                                                                      |
+| `HUBSPOT_FORM_ID`   | ID of the HubSpot form that receives submissions                                                 |
+| `HUBSPOT_API_HOST`  | HubSpot Forms API host (this account is in the EU region: `api-eu1.hsforms.com`)                 |
+| `GEMINI_API_KEY`    | Google Gemini API key                                                                            |
+| `GEMINI_MODEL`      | Pinned Gemini model, currently `gemini-3.8-flash`. The free tier allows only 20 requests per day |
 
 ### Scripts
 
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build |
-| `npm run lint` | ESLint |
+| Script                            | Purpose                |
+| --------------------------------- | ---------------------- |
+| `npm run dev`                     | Start the dev server   |
+| `npm run build`                   | Production build       |
+| `npm run lint`                    | ESLint                 |
 | `npm run format` / `format:check` | Prettier write / check |
-| `npm test` | Vitest unit tests |
+| `npm test`                        | Vitest unit tests      |
 
 ## Project structure
 

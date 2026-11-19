@@ -1,3 +1,4 @@
+import {ChatAssistant} from '@/components/ChatAssistant';
 import {ContactForm} from '@/components/ContactForm';
 import {ContactSection} from '@/components/ContactSection';
 import {Footer} from '@/components/Footer';
@@ -34,6 +35,7 @@ export default function Page() {
 				</ContactSection>
 			</main>
 			<Footer {...footer} />
+			<ChatAssistant />
 		</>
 	);
 }

@@ -1,10 +1,10 @@
 <!--
 Sync Impact Report
-- Version change: (template) → 1.0.0
-- Modified principles: placeholders replaced with
-  I. Clear Separation of Concerns, II. Type Safety & Single-Source Validation,
-  III. Security by Default, IV. Accessibility & Performance, V. Simplicity
-- Added sections: Technology Stack, Quality Gates & Workflow, Governance
+- Version change: 1.0.0 → 1.1.0 (MINOR: new principle added, existing principles expanded)
+- Modified principles: III. Security by Default (rate limiting and input size limits for
+  public endpoints calling paid third-party services)
+- Added principles: VI. Responsible AI
+- Added sections: none (Technology Stack and Quality Gates & Workflow gained one bullet each)
 - Removed sections: none
 - Templates: none modified (templates read the constitution at runtime)
 - Deferred TODOs: none
@@ -48,9 +48,11 @@ the only trustworthy boundary.
 - `.env` files MUST NOT be committed. `.env.example` MUST list every required variable and stay
   up to date.
 - Every public form MUST include a honeypot field for spam protection.
+- Every public endpoint that calls a paid third-party service MUST have rate limiting and
+  maximum input sizes (message length and conversation history length).
 
-Rationale: a public demo is still a public site; leaked keys or spam reach real third-party
-accounts.
+Rationale: a public demo is still a public site; leaked keys, spam or unbounded requests reach
+real, paid third-party accounts.
 
 ### IV. Accessibility & Performance
 
@@ -70,12 +72,31 @@ Rationale: accessibility and performance are baseline quality, not optional poli
 Rationale: the project is presented at a technical interview; unexplained or speculative code is
 a liability.
 
+### VI. Responsible AI
+
+- The LLM provider MUST be called only from the server. The API key MUST be a server-only
+  environment variable and MUST be listed in `.env.example`.
+- The assistant MUST answer only from the site content in `src/data`. If the answer is not
+  there, it MUST say so and point the visitor to the contact form. It MUST NOT invent prices,
+  deadlines, availability or guarantees.
+- The system prompt, internal errors and raw provider responses MUST NOT be shown to the
+  visitor.
+- The assistant MUST resist instructions in user messages that try to change its role or reveal
+  its instructions.
+- Chat messages MUST NOT be stored on the server or sent to the CRM.
+
+Rationale: a public LLM endpoint costs money per request and its answers represent the company,
+so it must stay grounded, protected from abuse, and private.
+
 ## Technology Stack
 
 - Framework: Next.js (App Router) with TypeScript in strict mode.
 - Styling: Tailwind CSS.
 - Forms and validation: React Hook Form with Zod.
 - CRM: HubSpot, reached only through a server-side route handler.
+- LLM provider for the chat assistant: reached only through a server-side route handler. The
+  concrete provider and SDK are chosen in the feature plan and MUST be justified under
+  Principle V.
 - Package manager: npm. Hosting: Vercel.
 - Tooling: ESLint, Prettier, Vitest.
 
@@ -85,6 +106,7 @@ a liability.
 - Prettier MUST use the root `.prettierrc` as is.
 - A task is done only when `npm run lint` and `npm run format:check` pass.
 - Every Zod schema MUST have Vitest unit tests.
+- Automated tests MUST NOT call the real LLM provider; the provider MUST be mocked.
 - Committed code MUST NOT contain `console.log` debugging statements.
 
 ## Governance
@@ -96,4 +118,4 @@ a liability.
   wording clarifications.
 - Compliance is reviewed before a feature is considered complete.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-28
+**Version**: 1.1.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-19
